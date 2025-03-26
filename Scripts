@@ -1,1 +1,81 @@
+/*
+================================================================================
+Database Setup Script: DataWarehouse with Bronze, Silver, Gold Schemas
+================================================================================
 
+Purpose:
+    This script performs a full reset of the 'DataWarehouse' database and its 
+    core schemas. It is designed for environment setup/re-set in development
+    or testing scenarios.
+
+Operations:
+    1. DROP existing 'DataWarehouse' database if present (with active connections cleanup)
+    2. RECREATE 'DataWarehouse' database
+    3. CREATE schemas for data maturity layers:
+        - bronze: Raw/unprocessed data
+        - silver: Cleaned/transformed data
+        - gold: Aggregated/business-ready data
+
+WARNING: 
+    This script DESTROYS ALL DATA in the 'DataWarehouse' database permanently.
+    Use only in controlled environments. Verify backups before proceeding.
+*/
+
+-- =============================================================================
+-- Section 1: Database Removal & Creation
+-- =============================================================================
+
+-- Connect to master database to manage database-level operations
+USE master;
+GO
+
+-- Safely remove existing database (handles active connections)
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'DataWarehouse')
+BEGIN
+    -- Force database into single-user mode to disconnect others
+    ALTER DATABASE DataWarehouse 
+    SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    
+    -- Permanently remove database
+    DROP DATABASE DataWarehouse;
+END;
+GO
+
+-- Create fresh database with default settings
+CREATE DATABASE DataWarehouse;
+GO
+
+-- =============================================================================
+-- Section 2: Schema Creation in New Database
+-- =============================================================================
+
+-- Switch context to the new database
+USE DataWarehouse;
+GO
+
+/*
+Schema Purpose: bronze layer stores:
+    - Raw ingested data
+    - Unmodified source system data
+    - Data in original format
+*/
+CREATE SCHEMA bronze;
+GO
+
+/*
+Schema Purpose: silver layer stores:
+    - Cleaned/validated data
+    - Structurally normalized data
+    - De-duplicated records
+*/
+CREATE SCHEMA silver;
+GO
+
+/*
+Schema Purpose: gold layer stores:
+    - Business-friendly aggregates
+    - Reporting-ready tables
+    - Enriched data with business logic
+*/
+CREATE SCHEMA gold;
+GO
